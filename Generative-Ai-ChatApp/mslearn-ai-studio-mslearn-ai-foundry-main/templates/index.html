@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Azure Chat App</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Azure AI Assistant</h1>
+        <div class="chat-window" id="chatWindow"></div>
+        <form id="chatForm">
+            <select id="personality">
+                <option value="friendly">🤝 Friendly</option>
+                <option value="professional">🧑‍💼 Professional</option>
+                <option value="joking">🤪 Joking</option>
+            </select>
+            <input type="text" id="userInput" placeholder="Type your message..." autocomplete="off" required />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById("chatForm");
+        const input = document.getElementById("userInput");
+        const personality = document.getElementById("personality");
+        const chatWindow = document.getElementById("chatWindow");
+
+        let isFirstMessage = true;
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            appendMessage("You", prompt);
+            input.value = "";
+
+            const res = await fetch("/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    personality: isFirstMessage ? personality.value : null
+                })
+            });
+
+            const data = await res.json();
+            if (data.response) {
+                appendMessage("Assistant", data.response);
+            } else {
+                appendMessage("Error", data.error || "Something went wrong.");
+            }
+
+            isFirstMessage = false;
+        });
+
+        function appendMessage(sender, message) {
+            const div = document.createElement("div");
+            div.classList.add("message");
+            div.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            chatWindow.appendChild(div);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    </script>
+</body>
+</html>
